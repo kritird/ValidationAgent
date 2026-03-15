@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Production Validator · Visa Payment Systems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #09090f;
+    --surface: #12121c;
+    --surface2: #1a1a28;
+    --surface3: #22223a;
+    --border: #2a2a45;
+    --border-bright: #3d3d6b;
+    --accent: #4f6ef7;
+    --accent-bright: #6b85ff;
+    --accent-dim: #4f6ef720;
+    --success: #22c55e;
+    --success-dim: #22c55e18;
+    --warning: #f59e0b;
+    --warning-dim: #f59e0b18;
+    --danger: #ef4444;
+    --danger-dim: #ef444418;
+    --text: #e8e8f0;
+    --text-muted: #8888aa;
+    --text-dim: #555577;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(var(--surface2) 1px, transparent 1px),
+      linear-gradient(90deg, var(--surface2) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glow orbs */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, #4f6ef730 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ── HEADER ─────────────────────────────────── */
+  header {
+    padding: 32px 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--accent), #7c3aed);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 20px var(--accent-dim);
+  }
+
+  .logo-text h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .logo-text span {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .header-status {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--success);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 #22c55e80; }
+    50% { opacity: 0.8; box-shadow: 0 0 0 5px transparent; }
+  }
+
+  /* ── TABS ───────────────────────────────────── */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    padding: 20px 0 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab {
+    padding: 10px 20px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    position: relative;
+    bottom: -1px;
+  }
+
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    color: var(--accent-bright);
+    border-bottom-color: var(--accent);
+  }
+
+  /* ── CONTENT PANELS ─────────────────────────── */
+  .panel { display: none; padding: 32px 0; }
+  .panel.active { display: block; }
+
+  /* ── FORM SECTIONS ──────────────────────────── */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    transition: border-color 0.2s;
+  }
+
+  .section:hover { border-color: var(--border-bright); }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .section-num {
+    width: 26px;
+    height: 26px;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent-bright);
+    flex-shrink: 0;
+  }
+
+  .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .section-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .badge-optional {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 6px;
+    background: var(--surface3);
+    border-radius: 4px;
+    color: var(--text-dim);
+    margin-left: 4px;
+  }
+
+  /* ── GRID ───────────────────────────────────── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* ── FORM ELEMENTS ──────────────────────────── */
+  .field { display: flex; flex-direction: column; gap: 6px; }
+
+  label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="date"],
+  input[type="time"],
+  select,
+  textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    transition: all 0.2s;
+    outline: none;
+    width: 100%;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  input::placeholder, textarea::placeholder { color: var(--text-dim); }
+
+  select option { background: var(--surface2); }
+
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* ── FILE UPLOAD ────────────────────────────── */
+  .upload-zone {
+    border: 1.5px dashed var(--border-bright);
+    border-radius: 10px;
+    padding: 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    background: var(--surface2);
+  }
+
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon { font-size: 28px; margin-bottom: 8px; }
+  .upload-label { font-size: 13px; font-weight: 500; color: var(--text); }
+  .upload-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-family: var(--mono); }
+  .upload-filename {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--success);
+    margin-top: 8px;
+    padding: 4px 10px;
+    background: var(--success-dim);
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  /* ── SYSTEMS SELECTOR ───────────────────────── */
+  .systems-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .system-btn {
+    padding: 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    user-select: none;
+  }
+
+  .system-btn:hover { border-color: var(--border-bright); color: var(--text); }
+  .system-btn.selected {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    color: var(--accent-bright);
+    box-shadow: 0 0 12px var(--accent-dim);
+  }
+
+  /* ── RELEASE TYPE ───────────────────────────── */
+  .release-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .release-btn {
+    padding: 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface2);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .release-btn .rb-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .release-btn .rb-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+
+  .release-btn:hover { border-color: var(--border-bright); }
+  .release-btn.selected {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .release-btn.selected .rb-title { color: var(--accent-bright); }
+
+  /* ── VALIDATION CASES PREVIEW ───────────────── */
+  .case-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+
+  .case-card:hover { border-color: var(--border-bright); }
+
+  .case-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .case-id {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 3px 8px;
+    background: var(--accent-dim);
+    color: var(--accent-bright);
+    border-radius: 4px;
+    border: 1px solid var(--accent);
+  }
+
+  .case-title-text {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .case-source {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 6px;
+    background: var(--surface3);
+    border-radius: 4px;
+    color: var(--text-dim);
+    margin-left: auto;
+  }
+
+  .case-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  .umf-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .umf-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .umf-tag .umf-num { color: var(--warning); }
+  .umf-tag .umf-iso { color: var(--text-dim); }
+
+  .case-outcome {
+    font-size: 12px;
+    color: var(--success);
+    background: var(--success-dim);
+    padding: 6px 10px;
+    border-radius: 6px;
+    border-left: 2px solid var(--success);
+  }
+
+  /* ── BUTTONS ────────────────────────────────── */
+  .btn {
+    padding: 11px 22px;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 0 20px var(--accent-dim);
+  }
+  .btn-primary:hover {
+    background: var(--accent-bright);
+    box-shadow: 0 0 30px var(--accent-dim);
+    transform: translateY(-1px);
+  }
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--border-bright); background: var(--surface3); }
+
+  .btn-danger {
+    background: var(--danger-dim);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+  }
+  .btn-danger:hover { background: var(--danger); color: white; }
+
+  .btn-success {
+    background: var(--success-dim);
+    color: var(--success);
+    border: 1px solid var(--success);
+  }
+
+  /* ── VALIDATION SUMMARY (pre-submit review) ─── */
+  #validation-summary {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    display: none;
+    box-shadow: 0 0 30px var(--accent-dim);
+  }
+
+  .summary-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent-bright);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .summary-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+
+  .summary-item-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .summary-item-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* ── STATUS PANEL ───────────────────────────── */
+  .status-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .status-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .status-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+
+  .badge-pending { background: var(--surface3); color: var(--text-muted); }
+  .badge-scheduled { background: var(--warning-dim); color: var(--warning); border: 1px solid var(--warning); }
+  .badge-running { background: var(--accent-dim); color: var(--accent-bright); border: 1px solid var(--accent); animation: blink 1.5s infinite; }
+  .badge-passed { background: var(--success-dim); color: var(--success); border: 1px solid var(--success); }
+  .badge-failed { background: var(--danger-dim); color: var(--danger); border: 1px solid var(--danger); }
+  .badge-partial { background: var(--warning-dim); color: var(--warning); border: 1px solid var(--warning); }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  /* ── RESULT CARDS ───────────────────────────── */
+  .result-case {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border-left: 3px solid var(--border);
+  }
+
+  .result-case.passed { border-left-color: var(--success); }
+  .result-case.failed { border-left-color: var(--danger); }
+
+  .result-case-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .field-result {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin: 2px;
+    display: inline-block;
+  }
+
+  .field-match { background: var(--success-dim); color: var(--success); }
+  .field-fail { background: var(--danger-dim); color: var(--danger); }
+
+  /* ── TIMELINE ───────────────────────────────── */
+  .timeline {
+    padding: 16px 0;
+  }
+
+  .timeline-item {
+    display: flex;
+    gap: 14px;
+    padding-bottom: 20px;
+    position: relative;
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 24px;
+    bottom: 0;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .timeline-item:last-child::before { display: none; }
+
+  .timeline-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  .timeline-dot.done { background: var(--success-dim); border: 2px solid var(--success); color: var(--success); }
+  .timeline-dot.active { background: var(--accent-dim); border: 2px solid var(--accent); color: var(--accent); animation: blink 1.5s infinite; }
+  .timeline-dot.pending { background: var(--surface3); border: 2px solid var(--border); color: var(--text-dim); }
+
+  .timeline-content .tl-title { font-size: 13px; font-weight: 600; }
+  .timeline-content .tl-time { font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ── LOADING ────────────────────────────────── */
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── TOAST ──────────────────────────────────── */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .toast-item {
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    max-width: 360px;
+    animation: toastIn 0.3s ease;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .toast-success { background: var(--surface); border: 1px solid var(--success); color: var(--success); }
+  .toast-error { background: var(--surface); border: 1px solid var(--danger); color: var(--danger); }
+  .toast-info { background: var(--surface); border: 1px solid var(--accent); color: var(--accent-bright); }
+
+  /* ── MISC ───────────────────────────────────── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 0;
+  }
+
+  .action-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 8px;
+  }
+
+  .text-muted { color: var(--text-muted); font-size: 13px; }
+  .mono { font-family: var(--mono); }
+  .highlight { color: var(--accent-bright); font-weight: 600; }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text-dim);
+  }
+
+  .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state .empty-text { font-size: 14px; }
+
+  /* Step indicator */
+  .step-indicator {
+    display: flex;
+    gap: 0;
+    margin-bottom: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    overflow: hidden;
+  }
+
+  .step {
+    flex: 1;
+    padding: 10px 8px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dim);
+    border-radius: 7px;
+    transition: all 0.2s;
+    cursor: default;
+  }
+
+  .step .step-num {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    margin-bottom: 2px;
+  }
+
+  .step.active { background: var(--accent-dim); color: var(--accent-bright); }
+  .step.done { color: var(--success); }
+
+  @media (max-width: 768px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .systems-grid { grid-template-columns: repeat(2, 1fr); }
+    .summary-grid { grid-template-columns: 1fr; }
+    .release-options { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-text">
+        <h1>Production Validator</h1>
+        <span>Visa Payment Systems · Internal Tool</span>
+      </div>
+    </div>
+    <div class="header-status">
+      <div class="dot"></div>
+      SYSTEM ONLINE
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('setup')">New Validation</button>
+    <button class="tab" onclick="switchTab('monitor')">Monitor</button>
+    <button class="tab" onclick="switchTab('history')">History</button>
+  </div>
+
+  <!-- ── NEW VALIDATION ─────────────────────── -->
+  <div id="tab-setup" class="panel active">
+    <div class="step-indicator">
+      <div class="step active" id="step-1"><span class="step-num">01</span>Configure</div>
+      <div class="step" id="step-2"><span class="step-num">02</span>Review</div>
+      <div class="step" id="step-3"><span class="step-num">03</span>Confirm</div>
+    </div>
+
+    <!-- Phase 1: Form -->
+    <div id="form-phase">
+
+      <!-- Feature Details -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-num">1</div>
+          <div>
+            <div class="section-title">Feature Details</div>
+            <div class="section-subtitle">Identify the product feature being validated</div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Feature Number *</label>
+            <input type="text" id="feature_number" placeholder="e.g. VDP-2024-1234" />
+          </div>
+          <div class="field">
+            <label>Release Type *</label>
+            <div class="release-options">
+              <div class="release-btn selected" onclick="selectRelease('release', this)">
+                <div class="rb-title">🚀 Release Product</div>
+                <div class="rb-desc">Major versioned release</div>
+              </div>
+              <div class="release-btn" onclick="selectRelease('regular', this)">
+                <div class="rb-title">📦 Regular Release</div>
+                <div class="rb-desc">Standard deployment</div>
+              </div>
+            </div>
+            <input type="hidden" id="release_type" value="release" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Launch Schedule -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-num">2</div>
+          <div>
+            <div class="section-title">Launch Schedule</div>
+            <div class="section-subtitle">When is this feature going live in production?</div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Launch Date *</label>
+            <input type="date" id="launch_date" />
+          </div>
+          <div class="field">
+            <label>Activation Time <span class="badge-optional">optional</span></label>
+            <input type="time" id="launch_time" placeholder="HH:MM UTC" />
+            <div class="text-muted" style="font-size:11px;margin-top:4px">If omitted, you'll receive a manual trigger email</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Systems -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-num">3</div>
+          <div>
+            <div class="section-title">Target Systems *</div>
+            <div class="section-subtitle">Select which systems to validate against</div>
+          </div>
+        </div>
+        <div class="systems-grid">
+          <div class="system-btn" onclick="toggleSystem('VIPA', this)">VIPA</div>
+          <div class="system-btn" onclick="toggleSystem('VIPB', this)">VIPB</div>
+          <div class="system-btn" onclick="toggleSystem('VIPC', this)">VIPC</div>
+          <div class="system-btn" onclick="toggleSystem('VIPI', this)">VIPI</div>
+        </div>
+        <input type="hidden" id="selected_systems" value="[]" />
+      </div>
+
+      <!-- Documents -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-num">4</div>
+          <div>
+            <div class="section-title">Test Documents</div>
+            <div class="section-subtitle">Upload test plan matrix and optional tech letter</div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Test Plan Matrix (Excel) *</label>
+            <div class="upload-zone" id="zone-excel">
+              <input type="file" id="test_plan" accept=".xlsx,.xls" onchange="handleFile(this, 'zone-excel', 'label-excel')" />
+              <div class="upload-icon">📊</div>
+              <div class="upload-label">Drop Excel file here</div>
+              <div class="upload-sub">.xlsx / .xls</div>
+              <div id="label-excel"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Tech Letter (PDF) <span class="badge-optional">optional</span></label>
+            <div class="upload-zone" id="zone-pdf">
+              <input type="file" id="tech_letter" accept=".pdf" onchange="handleFile(this, 'zone-pdf', 'label-pdf')" />
+              <div class="upload-icon">📄</div>
+              <div class="upload-label">Drop PDF here</div>
+              <div class="upload-sub">.pdf</div>
+              <div id="label-pdf"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notification & Custom -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-num">5</div>
+          <div>
+            <div class="section-title">Notifications & Custom Rules</div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label>GDL Email Address *</label>
+            <input type="email" id="gdl_email" placeholder="gdl-payments-validation@company.com" />
+          </div>
+          <div class="field">
+            <label>Custom Validation Notes <span class="badge-optional">optional</span></label>
+            <textarea id="custom_notes" placeholder="Additional UMF fields to check, specific transaction patterns to look for..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <div class="text-muted">* Required fields</div>
+        <button class="btn btn-primary" onclick="parseAndPreview()" id="btn-preview">
+          <span>🔍 Parse Documents & Preview</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Phase 2: Review Validation Cases -->
+    <div id="review-phase" style="display:none">
+      <div class="section">
+        <div class="section-header">
+          <div class="section-num">✓</div>
+          <div>
+            <div class="section-title">Validation Cases Generated</div>
+            <div class="section-subtitle">Review and edit before submitting. AI-generated from your documents.</div>
+          </div>
+        </div>
+        <div id="cases-container"></div>
+        <button class="btn btn-secondary" onclick="addCase()" style="margin-top:8px">+ Add Case</button>
+      </div>
+
+      <div id="validation-summary">
+        <div class="summary-title">📋 Validation Summary</div>
+        <div class="summary-grid" id="summary-items"></div>
+        <div class="divider"></div>
+        <div id="summary-cases"></div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn btn-secondary" onclick="backToForm()">← Back</button>
+        <button class="btn btn-primary" onclick="showSummaryAndConfirm()" id="btn-confirm">
+          View Full Summary & Confirm →
+        </button>
+      </div>
+    </div>
+
+    <!-- Phase 3: Final Confirm -->
+    <div id="confirm-phase" style="display:none">
+      <div class="section" style="border-color: var(--accent);">
+        <div class="section-header">
+          <div class="section-num" style="background:var(--accent-dim);border-color:var(--accent)">✓</div>
+          <div>
+            <div class="section-title highlight">Ready to Submit</div>
+            <div class="section-subtitle">Review all details below. Once submitted, emails will be sent to the GDL.</div>
+          </div>
+        </div>
+        <div id="final-summary"></div>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-secondary" onclick="backToReview()">← Edit Cases</button>
+        <button class="btn btn-primary" onclick="submitValidation()" id="btn-submit">
+          🚀 Submit Validation Setup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MONITOR ─────────────────────────────── -->
+  <div id="tab-monitor" class="panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <h2 style="font-size:18px;font-weight:700">Active Validations</h2>
+        <div class="text-muted">Real-time status of running validations</div>
+      </div>
+      <button class="btn btn-secondary" onclick="loadMonitor()">↻ Refresh</button>
+    </div>
+    <div id="monitor-container">
+      <div class="empty-state">
+        <div class="empty-icon">📡</div>
+        <div class="empty-text">Loading validations...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HISTORY ─────────────────────────────── -->
+  <div id="tab-history" class="panel">
+    <div style="margin-bottom:20px">
+      <h2 style="font-size:18px;font-weight:700">Validation History</h2>
+      <div class="text-muted">All past and current validations</div>
+    </div>
+    <div id="history-container">
+      <div class="empty-state">
+        <div class="empty-icon">📜</div>
+        <div class="empty-text">No validations yet</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = 'http://localhost:8000';
+let selectedSystems = [];
+let parsedCases = [];
+let formData = {};
+
+// ── TABS ────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'monitor') loadMonitor();
+  if (tab === 'history') loadHistory();
+}
+
+// ── FILE UPLOAD ──────────────────────────────────
+function handleFile(input, zoneId, labelId) {
+  const file = input.files[0];
+  if (!file) return;
+  const label = document.getElementById(labelId);
+  label.innerHTML = `<div class="upload-filename">✓ ${file.name}</div>`;
+  document.getElementById(zoneId).style.borderColor = 'var(--success)';
+}
+
+// ── SYSTEMS ──────────────────────────────────────
+function toggleSystem(sys, el) {
+  const idx = selectedSystems.indexOf(sys);
+  if (idx > -1) {
+    selectedSystems.splice(idx, 1);
+    el.classList.remove('selected');
+  } else {
+    selectedSystems.push(sys);
+    el.classList.add('selected');
+  }
+  document.getElementById('selected_systems').value = JSON.stringify(selectedSystems);
+}
+
+// ── RELEASE TYPE ──────────────────────────────────
+function selectRelease(val, el) {
+  document.querySelectorAll('.release-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('release_type').value = val;
+}
+
+// ── STEPS ─────────────────────────────────────────
+function setStep(n) {
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById(`step-${i}`);
+    el.classList.remove('active', 'done');
+    if (i < n) el.classList.add('done');
+    else if (i === n) el.classList.add('active');
+  }
+}
+
+// ── PARSE & PREVIEW ──────────────────────────────
+async function parseAndPreview() {
+  // Validate
+  const featureNum = document.getElementById('feature_number').value.trim();
+  const launchDate = document.getElementById('launch_date').value;
+  const gdlEmail = document.getElementById('gdl_email').value.trim();
+  const excelFile = document.getElementById('test_plan').files[0];
+  
+  if (!featureNum) return toast('Feature number is required', 'error');
+  if (!launchDate) return toast('Launch date is required', 'error');
+  if (!gdlEmail) return toast('GDL email is required', 'error');
+  if (selectedSystems.length === 0) return toast('Select at least one system', 'error');
+  if (!excelFile) return toast('Test plan Excel file is required', 'error');
+  
+  const btn = document.getElementById('btn-preview');
+  btn.innerHTML = '<div class="spinner"></div> Parsing documents with AI...';
+  btn.disabled = true;
+  
+  formData = {
+    featureNum,
+    launchDate,
+    launchTime: document.getElementById('launch_time').value,
+    releaseType: document.getElementById('release_type').value,
+    gdlEmail,
+    systems: [...selectedSystems],
+    customNotes: document.getElementById('custom_notes').value
+  };
+  
+  try {
+    const fd = new FormData();
+    fd.append('test_plan', excelFile);
+    const pdfFile = document.getElementById('tech_letter').files[0];
+    if (pdfFile) fd.append('tech_letter', pdfFile);
+    fd.append('feature_number', featureNum);
+    if (formData.customNotes) fd.append('custom_notes', formData.customNotes);
+    
+    const resp = await fetch(`${API}/api/parse-documents`, { method: 'POST', body: fd });
+    if (!resp.ok) throw new Error(await resp.text());
+    
+    const data = await resp.json();
+    parsedCases = data.validation_cases;
+    
+    renderCases();
+    document.getElementById('form-phase').style.display = 'none';
+    document.getElementById('review-phase').style.display = 'block';
+    setStep(2);
+    toast(`✓ Generated ${parsedCases.length} validation cases`, 'success');
+  } catch (e) {
+    toast('Parse failed: ' + e.message, 'error');
+  } finally {
+    btn.innerHTML = '🔍 Parse Documents & Preview';
+    btn.disabled = false;
+  }
+}
+
+// ── RENDER CASES ─────────────────────────────────
+function renderCases() {
+  const container = document.getElementById('cases-container');
+  container.innerHTML = parsedCases.map((c, i) => `
+    <div class="case-card" id="case-${c.case_id}">
+      <div class="case-header">
+        <span class="case-id">${c.case_id}</span>
+        <span class="case-title-text">${c.title}</span>
+        <span class="case-source">${c.source}</span>
+        <button onclick="removeCase('${c.case_id}')" style="margin-left:auto;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;padding:0 4px">×</button>
+      </div>
+      <div class="case-desc">${c.description}</div>
+      <div class="umf-tags">
+        ${c.umf_fields.map(f => `
+          <span class="umf-tag">
+            <span class="umf-num">UMF-${f.umf_number}</span>
+            ${f.iso_field ? `<span class="umf-iso"> · ${f.iso_field}</span>` : ''}
+            · ${f.field_name}
+            ${f.expected_value ? ` = ${f.expected_value}` : ''}
+          </span>
+        `).join('')}
+      </div>
+      <div class="case-outcome">✓ Pass: ${c.expected_outcome}</div>
+    </div>
+  `).join('');
+}
+
+function removeCase(caseId) {
+  parsedCases = parsedCases.filter(c => c.case_id !== caseId);
+  renderCases();
+}
+
+function addCase() {
+  const id = `VC${(parsedCases.length + 1).toString().padStart(3, '0')}`;
+  parsedCases.push({
+    case_id: id,
+    title: 'Custom Validation Case',
+    description: 'Manually defined validation case',
+    umf_fields: [{ umf_number: 0, iso_field: '', field_name: 'Field', expected_value: '', description: '' }],
+    expected_outcome: 'Fields present in transaction logs',
+    source: 'custom'
+  });
+  renderCases();
+}
+
+// ── SUMMARY ───────────────────────────────────────
+function showSummaryAndConfirm() {
+  if (parsedCases.length === 0) return toast('Add at least one validation case', 'error');
+  
+  const summaryEl = document.getElementById('validation-summary');
+  summaryEl.style.display = 'block';
+  
+  const timeInfo = formData.launchTime
+    ? `${formData.launchDate} at ${formData.launchTime} UTC`
+    : `${formData.launchDate} (manual trigger)`;
+  
+  document.getElementById('summary-items').innerHTML = `
+    <div class="summary-item"><div class="summary-item-label">Feature</div><div class="summary-item-value">${formData.featureNum}</div></div>
+    <div class="summary-item"><div class="summary-item-label">Release Type</div><div class="summary-item-value">${formData.releaseType.toUpperCase()}</div></div>
+    <div class="summary-item"><div class="summary-item-label">Launch</div><div class="summary-item-value">${timeInfo}</div></div>
+    <div class="summary-item"><div class="summary-item-label">Systems</div><div class="summary-item-value">${formData.systems.join(', ')}</div></div>
+    <div class="summary-item"><div class="summary-item-label">GDL Email</div><div class="summary-item-value" style="font-size:12px">${formData.gdlEmail}</div></div>
+    <div class="summary-item"><div class="summary-item-label">Validation Cases</div><div class="summary-item-value">${parsedCases.length}</div></div>
+  `;
+  
+  document.getElementById('summary-cases').innerHTML = `
+    <h4 style="font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px">Validation Cases</h4>
+    ${parsedCases.map(c => `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span class="case-id">${c.case_id}</span>
+        <span style="font-size:13px;font-weight:500">${c.title}</span>
+        <span style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--text-dim)">${c.umf_fields.length} UMF fields</span>
+      </div>
+    `).join('')}
+  `;
+  
+  // Build final confirm view
+  document.getElementById('review-phase').style.display = 'none';
+  document.getElementById('confirm-phase').style.display = 'block';
+  document.getElementById('final-summary').innerHTML = summaryEl.innerHTML;
+  setStep(3);
+}
+
+function backToForm() {
+  document.getElementById('review-phase').style.display = 'none';
+  document.getElementById('form-phase').style.display = 'block';
+  setStep(1);
+}
+
+function backToReview() {
+  document.getElementById('confirm-phase').style.display = 'none';
+  document.getElementById('review-phase').style.display = 'block';
+  setStep(2);
+}
+
+// ── SUBMIT ────────────────────────────────────────
+async function submitValidation() {
+  const btn = document.getElementById('btn-submit');
+  btn.innerHTML = '<div class="spinner"></div> Submitting...';
+  btn.disabled = true;
+  
+  try {
+    const fd = new FormData();
+    fd.append('test_plan', document.getElementById('test_plan').files[0]);
+    const pdfFile = document.getElementById('tech_letter').files[0];
+    if (pdfFile) fd.append('tech_letter', pdfFile);
+    
+    fd.append('feature_number', formData.featureNum);
+    fd.append('release_type', formData.releaseType);
+    fd.append('launch_date', formData.launchDate);
+    if (formData.launchTime) fd.append('launch_time', formData.launchTime);
+    fd.append('systems', JSON.stringify(formData.systems));
+    fd.append('gdl_email', formData.gdlEmail);
+    if (formData.customNotes) fd.append('custom_validation_notes', formData.customNotes);
+    fd.append('validation_cases_override', JSON.stringify(parsedCases));
+    
+    const resp = await fetch(`${API}/api/setup`, { method: 'POST', body: fd });
+    if (!resp.ok) throw new Error(await resp.text());
+    
+    const data = await resp.json();
+    
+    toast(`✅ Validation ${data.validation_id} created!`, 'success');
+    
+    // Reset to monitor tab
+    setTimeout(() => {
+      document.querySelectorAll('.tab')[1].click();
+      loadMonitor();
+    }, 1500);
+    
+  } catch (e) {
+    toast('Submission failed: ' + e.message, 'error');
+    btn.innerHTML = '🚀 Submit Validation Setup';
+    btn.disabled = false;
+  }
+}
+
+// ── MONITOR ───────────────────────────────────────
+async function loadMonitor() {
+  try {
+    const resp = await fetch(`${API}/api/validations`);
+    const data = await resp.json();
+    const validations = data.validations || [];
+    
+    const container = document.getElementById('monitor-container');
+    
+    if (validations.length === 0) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-icon">📡</div><div class="empty-text">No validations configured yet</div></div>`;
+      return;
+    }
+    
+    container.innerHTML = validations.map(v => {
+      const statusClass = `badge-${v.status}`;
+      const casesCount = (v.validation_cases || []).length;
+      const systems = (v.systems || []).join(', ');
+      const timeInfo = v.launch_time ? `${v.launch_date} ${v.launch_time}` : `${v.launch_date} (manual)`;
+      
+      return `
+        <div class="status-card">
+          <div class="status-header">
+            <div>
+              <div style="font-size:15px;font-weight:700">${v.feature_number}</div>
+              <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-top:2px">${v.validation_id}</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span class="status-badge ${statusClass}">${v.status?.toUpperCase()}</span>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;font-size:13px;margin-bottom:14px">
+            <div><span style="color:var(--text-dim)">Systems:</span> <strong>${systems}</strong></div>
+            <div><span style="color:var(--text-dim)">Launch:</span> <strong>${timeInfo}</strong></div>
+            <div><span style="color:var(--text-dim)">Cases:</span> <strong>${casesCount}</strong></div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-secondary" style="font-size:12px;padding:7px 14px" onclick="viewDetails('${v.validation_id}')">View Details</button>
+            ${v.status === 'scheduled' || v.status === 'pending' ? `
+              <button class="btn btn-primary" style="font-size:12px;padding:7px 14px" onclick="triggerValidation('${v.validation_id}')">▶ Trigger Now</button>
+            ` : ''}
+            ${v.status === 'failed' || v.status === 'partial' ? `
+              <button class="btn btn-danger" style="font-size:12px;padding:7px 14px" onclick="retryValidation('${v.validation_id}')">↺ Retry</button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+  } catch (e) {
+    document.getElementById('monitor-container').innerHTML = 
+      `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">Failed to load: ${e.message}</div></div>`;
+  }
+}
+
+async function triggerValidation(id) {
+  try {
+    const resp = await fetch(`${API}/api/trigger/${id}`, { method: 'POST' });
+    const data = await resp.json();
+    toast(`▶ Validation triggered (Attempt #${data.attempt})`, 'info');
+    setTimeout(loadMonitor, 1000);
+  } catch (e) {
+    toast('Trigger failed: ' + e.message, 'error');
+  }
+}
+
+async function retryValidation(id) {
+  try {
+    const resp = await fetch(`${API}/api/retry/${id}`, { method: 'POST' });
+    const data = await resp.json();
+    toast(`↺ Retry triggered (Attempt #${data.attempt})`, 'info');
+    setTimeout(loadMonitor, 1000);
+  } catch (e) {
+    toast('Retry failed: ' + e.message, 'error');
+  }
+}
+
+async function viewDetails(id) {
+  try {
+    const [setupResp, resultResp] = await Promise.all([
+      fetch(`${API}/api/validations/${id}`),
+      fetch(`${API}/api/results/${id}`)
+    ]);
+    const setup = await setupResp.json();
+    const resultData = await resultResp.json();
+    
+    // Show in a modal-ish section
+    let detailsHtml = `
+      <div style="position:fixed;inset:0;background:#000a;z-index:500;display:flex;align-items:center;justify-content:center;padding:20px" onclick="this.remove()">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;max-width:700px;width:100%;max-height:80vh;overflow-y:auto;position:relative" onclick="event.stopPropagation()">
+          <button onclick="this.closest('div[style*=fixed]').remove()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer">×</button>
+          <div style="font-size:16px;font-weight:700;margin-bottom:4px">${setup.feature_number}</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-bottom:16px">${id}</div>
+    `;
+    
+    if (resultData.result) {
+      const r = resultData.result;
+      detailsHtml += `
+        <div style="padding:12px;border-radius:8px;background:var(--surface2);margin-bottom:16px">
+          <strong>Overall: ${r.overall_status?.toUpperCase()}</strong> · Attempt #${r.attempt_number}<br>
+          <div style="color:var(--text-muted);font-size:13px;margin-top:6px">${r.summary}</div>
+        </div>
+        ${(r.case_results || []).map(cr => `
+          <div class="result-case ${cr.status}">
+            <div class="result-case-header">
+              <strong>${cr.case_id}: ${cr.case_title}</strong>
+              <span class="status-badge badge-${cr.status}">${cr.status?.toUpperCase()}</span>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">${cr.details}</div>
+            ${(cr.matched_fields || []).map(f => `<span class="field-result field-match">✓ ${f.field}</span>`).join('')}
+            ${(cr.failed_fields || []).map(f => `<span class="field-result field-fail">✗ ${f.field}: ${f.reason || 'mismatch'}</span>`).join('')}
+          </div>
+        `).join('')}
+      `;
+    } else {
+      detailsHtml += `<div style="color:var(--text-muted)">No results yet. Status: ${setup.status}</div>`;
+    }
+    
+    detailsHtml += `</div></div>`;
+    document.body.insertAdjacentHTML('beforeend', detailsHtml);
+    
+  } catch (e) {
+    toast('Failed to load details: ' + e.message, 'error');
+  }
+}
+
+// ── HISTORY ───────────────────────────────────────
+async function loadHistory() {
+  try {
+    const resp = await fetch(`${API}/api/validations`);
+    const data = await resp.json();
+    const validations = data.validations || [];
+    
+    const container = document.getElementById('history-container');
+    
+    if (validations.length === 0) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-icon">📜</div><div class="empty-text">No validations yet</div></div>`;
+      return;
+    }
+    
+    container.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border)">
+            <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:500;font-family:var(--mono);font-size:11px;text-transform:uppercase">Feature</th>
+            <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:500;font-family:var(--mono);font-size:11px;text-transform:uppercase">Date</th>
+            <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:500;font-family:var(--mono);font-size:11px;text-transform:uppercase">Systems</th>
+            <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:500;font-family:var(--mono);font-size:11px;text-transform:uppercase">Type</th>
+            <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:500;font-family:var(--mono);font-size:11px;text-transform:uppercase">Status</th>
+            <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:500;font-family:var(--mono);font-size:11px;text-transform:uppercase">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${validations.map(v => `
+            <tr style="border-bottom:1px solid var(--border);transition:background 0.1s" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
+              <td style="padding:10px 12px"><strong>${v.feature_number}</strong><br><span style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">${v.validation_id}</span></td>
+              <td style="padding:10px 12px">${v.launch_date}</td>
+              <td style="padding:10px 12px">${(v.systems || []).join(', ')}</td>
+              <td style="padding:10px 12px"><span style="font-family:var(--mono);font-size:11px">${v.release_type}</span></td>
+              <td style="padding:10px 12px"><span class="status-badge badge-${v.status}">${v.status?.toUpperCase()}</span></td>
+              <td style="padding:10px 12px"><button class="btn btn-secondary" style="font-size:11px;padding:5px 10px" onclick="viewDetails('${v.validation_id}')">Details</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (e) {
+    document.getElementById('history-container').innerHTML =
+      `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">${e.message}</div></div>`;
+  }
+}
+
+// ── TOAST ──────────────────────────────────────────
+function toast(msg, type = 'info') {
+  const container = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className = `toast-item toast-${type}`;
+  const icons = { success: '✓', error: '⚠', info: 'ℹ' };
+  el.innerHTML = `<span>${icons[type] || 'ℹ'}</span> ${msg}`;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// Auto-refresh monitor every 15 seconds if on that tab
+setInterval(() => {
+  if (document.getElementById('tab-monitor').classList.contains('active')) {
+    loadMonitor();
+  }
+}, 15000);
+</script>
+</body>
+</html>
